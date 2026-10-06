@@ -26,6 +26,7 @@ function Index() {
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const sendEmail = useServerFn(sendSubmissionEmail);
+  const submissionRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const question = questions[step];
   const value = question ? answers[question.id] || '' : '';
@@ -34,7 +35,10 @@ function Index() {
   const completed = questions.filter(q => !answerError(q, answers[q.id] || '', other)).length;
 
   useEffect(() => {
-    if (step === questions.length) document.querySelector<HTMLElement>('.thank-you h1')?.focus();
+    if (step === questions.length) {
+      document.querySelector<HTMLElement>('.thank-you h1')?.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
     else if (step >= 0) inputRef.current?.focus();
   }, [step]);
   const move = (target: number) => { setError(''); setStep(target); };
@@ -48,6 +52,11 @@ function Index() {
 
   return (
     <div className="questionnaire">
+      <iframe name="almatuando-submission" title="Envio das respostas" hidden aria-hidden="true" />
+      <form ref={submissionRef} action={formAction} method="POST" target="almatuando-submission" hidden>
+          {questions.map(q => <input key={q.id} type="hidden" name={'entry.' + q.id} value={q.other && answers[q.id] === 'Outro' ? '__other_option__' : answers[q.id] || ''} />)}
+          {answers['671491852'] === 'Outro' && <input type="hidden" name="entry.671491852.other_option_response" value={other} />}
+      </form>
       <header className="brand-header">
         <img className="brand-logo" src={logo.url} alt="Almatuando" />
         <span className="header-label">Estratégia com alma. Marcas com presença.</span>
@@ -64,7 +73,7 @@ function Index() {
         <h1 className="question-title" tabIndex={-1}>Obrigada por nos contar um pouco mais de você e do seu projeto!</h1>
         <p className="thank-you-copy">Muito em breve entraremos em contato.</p>
       </main> : question ? <main className="conversation">
-        <form key={step} className="question-enter" action={formAction} method="POST" onSubmit={async event => {
+        <form key={step} className="question-enter" onSubmit={async event => {
           event.preventDefault();
           if (sending) return;
           if (!lastQuestion) { next(); return; }
@@ -75,11 +84,8 @@ function Index() {
             setError(answerError(invalidQuestion, answers[invalidQuestion.id] || '', other));
             return;
           }
-          const form = event.currentTarget;
-          // Open the Google confirmation tab during the user's click, before awaiting email.
-          const target = 'almatuando-confirmation-' + Date.now();
-          const confirmation = window.open('about:blank', target);
-          form.target = confirmation ? target : '_self';
+          const form = submissionRef.current;
+          if (!form) return;
           setSending(true);
           let timeout: ReturnType<typeof setTimeout> | undefined;
           try { await Promise.race([sendEmail({ data: Object.fromEntries(questions.map(q => [q.id, q.other && answers[q.id] === 'Outro' ? 'Outro: ' + other : answers[q.id] || ''])) }), new Promise<void>(resolve => { timeout = setTimeout(resolve, 8000); })]); }
@@ -88,8 +94,6 @@ function Index() {
           form.submit();
           setStep(questions.length);
         }}>
-          {questions.map(q => <input key={q.id} type="hidden" name={'entry.' + q.id} value={q.other && answers[q.id] === 'Outro' ? '__other_option__' : answers[q.id] || ''} />)}
-          {answers['671491852'] === 'Outro' && <input type="hidden" name="entry.671491852.other_option_response" value={other} />}
           <fieldset disabled={sending} className="question-fields">
           <div className="question-number">{String(step + 1).padStart(2, '0')} <ArrowRight size={15} /><span>Vamos conhecer você e sua empresa</span></div>
           <h1 className="question-title" id="question-title">{question.title}<span className="required-mark" aria-label="obrigatório">*</span></h1>
