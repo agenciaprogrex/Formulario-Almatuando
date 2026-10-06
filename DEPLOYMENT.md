@@ -2,7 +2,7 @@
 
 Repositório previsto: https://github.com/agenciaprogrex/Formulario-Almatuando.git
 
-O vínculo local com o GitHub está configurado. O envio dos arquivos e a importação no Vercel ainda precisam ser concluídos.
+Os arquivos foram publicados na branch `main` do GitHub. A importação no Vercel ainda precisa ser concluída com uma sessão autenticada.
 
 1. Publicar os arquivos na branch principal, preservando qualquer histórico remoto.
 2. Importar o repositório em https://vercel.com/new com a integração GitHub.
